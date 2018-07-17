@@ -66,10 +66,9 @@ port.on('open', function() {
 var data = [];
 port.on('readable', function () {
   setTimeout(function() {
-    // console.log('Data1:', port.read());
     var buffer = port.read();
     console.log(buffer);
-    var ar = [];
+    data = [];
     for (var i=0; i < buffer.length; i++) {
       if (buffer[i].toString(16) === '7e') {
         if (isStartBit(buffer, i)) {
@@ -83,13 +82,16 @@ port.on('readable', function () {
         }
       }
     }
-    fs.appendFileSync(filePath, data);
+    fs.appendFileSync(filePath, data + '\n');
   }, 1000);
 });
 
 function isStartBit(buffer, i) {
   if (buffer[i-1] && buffer[i-1].toString(16) === '7e')
     return true;
+  else if (!buffer[i-1] && i === 0) {
+    return true;
+  }
   return false;
 }
 
