@@ -40,6 +40,8 @@ function pack(bytes) {
   return str;
 }
 
+
+
 port.open(function (err){
   if(err) {
     return console.log('Error message port: ',err.message);
@@ -61,13 +63,54 @@ port.on('open', function() {
 // });
 
 // Read data that is available but keep the stream from entering "flowing mode"
+var data = [];
 port.on('readable', function () {
   setTimeout(function() {
     // console.log('Data1:', port.read());
     var buffer = port.read();
-    fs.appendFileSync(filePath, buffer.toString('hex').split(' '));
-    // console.log('LENGTH : ', buffer.length, port.baudRate);
-    console.log(buffer.toString('hex'));
+    console.log(buffer);
+    var ar = [];
+    for (var i=0; i < buffer.length; i++) {
+      if (buffer[i].toString(16) === '7e') {
+        if (isStartBit(buffer, i)) {
+            // If it is a start bit
+            var startbit = i+2;
+            var stopbit = findStopbit(buffer, i+1);
+            if (startbit && stopbit) 
+              appendData(buffer, startbit, stopbit);
+            else if (startbit && stopbit === undefined)
+              appendData(buffer, startbit, buffer.length);
+        }
+      }
+    }
+    fs.appendFileSync(filePath, data);
   }, 1000);
 });
 
+function isStartBit(buffer, i) {
+  if (buffer[i-1] && buffer[i-1].toString(16) === '7e')
+    return true;
+  return false;
+}
+
+// function isStopBit(buffer, index) {
+//   if (buffer[i+1] && buffer[i+1].toString(16) === '7e')
+//     return true;
+//   return false;
+// }
+
+function findStopbit(buffer, i) {
+  for(var j=i;j < buffer.length; j++) {
+    if (buffer[j].toString(16) === '7e') {
+      return j;
+    }
+  }
+}
+
+function appendData(buffer, startIndex, stopIndex) {
+  var str = '';
+  for (let k = startIndex; k < stopIndex; k++) {
+    str += buffer[k].toString(16) + ' ';
+  }
+  data.push(str);
+}
