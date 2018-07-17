@@ -1,5 +1,5 @@
 var SerialPort = require("serialport");
-var port = new SerialPort("COM13", {
+var port = new SerialPort("COM6", {
   baudRate: 115200,
   autoOpen: false
 });
@@ -66,7 +66,7 @@ port.on('readable', function () {
         }
       }
     }
-    fs.appendFileSync(filePath, data);
+    fs.appendFileSync(filePath, data + ',');
   }, 1000);
 });
 
@@ -89,15 +89,21 @@ function findStopbit(buffer, i) {
 
 function appendData(buffer, startIndex, stopIndex) {
   var str = '';
+  var temp = ''; ['df','dg','7e','00','xx','yy']
+  memcpy(str,buffer,stop-star)
   for (let k = stopIndex-1; k >= startIndex; k--) {
-    str += buffer[k].toString(16);
+	if(buffer[k] < 16)
+		str += '0' + buffer[k].toString(16);
+	else
+		str += buffer[k].toString(16);
   }
-  if (str.includes('7d5e')) {
-    str = str.replace('7d5e', '7e');
+  temp = str;
+  if (str.includes('5d7d')) {
+    str = str.replace('5d7d', '7d');
   }
-  if (str.includes('7d5d')) {
-    str = str.replace('7d5d', '7d');
-  }
-  data.push(parseInt(str, 16));
+  if (str.includes('5e7d')) {
+    str = str.replace('5e7d', '7e');
+  }  
+  data.push( temp + ':' + parseInt(str, 16));
   dataCount++;
 }
