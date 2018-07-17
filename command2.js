@@ -1,5 +1,5 @@
 var SerialPort = require("serialport");
-var port = new SerialPort("COM13", {
+var port = new SerialPort("COM6", {
   baudRate: 115200,
   autoOpen: false
 });
@@ -98,6 +98,6 @@ function appendData(buffer, startIndex, stopIndex) {
   if (str.includes('7d5d')) {
     str = str.replace('7d5d', '7d');
   }
-  data.push(str);
+  data.push(parseInt(str, 16));
   dataCount++;
 }
