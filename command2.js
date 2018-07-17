@@ -29,8 +29,6 @@ function pack(bytes) {
   return str;
 }
 
-
-
 port.open(function (err){
   if(err) {
     return console.log('Error message port: ',err.message);
@@ -91,14 +89,14 @@ function findStopbit(buffer, i) {
 
 function appendData(buffer, startIndex, stopIndex) {
   var str = '';
-  for (let k = startIndex; k < stopIndex; k++) {
-    str += buffer[k].toString(16) + ' ';
+  for (let k = stopIndex-1; k >= startIndex; k--) {
+    str += buffer[k].toString(16);
   }
-  if (str.includes('7d 5e')) {
-    str = str.replace('7d 5e', '7e');
+  if (str.includes('7d5e')) {
+    str = str.replace('7d5e', '7e');
   }
-  if (str.includes('7d 5d')) {
-    str = str.replace('7d 5d', '7d');
+  if (str.includes('7d5d')) {
+    str = str.replace('7d5d', '7d');
   }
   data.push(str);
   dataCount++;
