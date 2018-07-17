@@ -1,5 +1,5 @@
 var SerialPort = require("serialport");
-var port = new SerialPort("COM6", {
+var port = new SerialPort("COM13", {
   baudRate: 115200,
   autoOpen: false
 });
@@ -66,7 +66,7 @@ port.on('readable', function () {
         }
       }
     }
-    fs.appendFileSync(filePath, '\nDATA COUNT : ' + dataCount + '\nTime : ' + (new Date() - startTime)+ '\n' + data);
+    fs.appendFileSync(filePath, data);
   }, 1000);
 });
 
