@@ -1,0 +1,13 @@
+{
+  "name": "node",
+  "version": "8.9.4",
+  "description": "FRDM data test",
+  "main": "command.js",
+  "scripts": {},
+  "author": "Ramakrishnan",
+  "license": "ISC",
+  "dependencies": {
+    "fs": "0.0.1-security",
+    "serialport": "^6.2.1"
+  }
+}
