@@ -42,38 +42,39 @@ port.on('open', function() {
 
 // Read data that is available but keep the stream from entering "flowing mode"
 var data = [];
-var excessBits = '';
+var eb = 0;
+var excessBits = [];
 var dataCount = 0;
 var startTime = new Date();
 port.on('readable', function () {
   setTimeout(function() {    
     // var ar = [0, 255,126, 126, 0, 80, 221, 126,126, 0, 81, 221, 126,126, 0, 100, 216, 126, 126, 0, 93, 165, 126,126, 0, 92, 165, 126];
     // var buffer = Buffer.from(ar);
-    var buffer = port.read();
+    var buffer = Buffer.concat([ Buffer.from(excessBits), port.read() ]);
     data = [];
     dataCount = 0;
     startTime = new Date();
-    var start = extractExcessBits(buffer);
+    // var start = extractExcessBits(buffer);
     for (var i=0; i < buffer.length; i++) {
       if (buffer[i].toString(16) === '7e') {
-        if (isStartBit(buffer, i)) {
+        // if (isStartBit(buffer, i)) {
             // If it is a start bit
             var startbit = i+2;
             var stopbit = findStopbit(buffer, i+1);
-            if (startbit && stopbit) {
-              appendData(buffer, startbit, stopbit, '');
+            if ( startbit > 0 && stopbit > 0 && (stopbit - startbit > 1)) {
+              appendData(buffer, startbit, stopbit);
               i = stopbit;
             }
             else if (startbit && stopbit === undefined)
-              appendData(buffer, startbit, buffer.length, 'add');
-        }
+              appendDatatoExcessBits(buffer, startbit, buffer.length);
+        // }
       }
     }
     fs.appendFileSync(filePath, data + ',');
   }, 50);
 });
 
-function extractExcessBits(buffer) {
+/* function extractExcessBits(buffer) {
   if (buffer[0].toString(16) !== '7e' || !isStartBit(buffer, 0)) {
     for (var start = 0; start < buffer.length; start++) {
       if (buffer[start+1] && buffer[start + 1].toString(16) === '7e') {
@@ -82,7 +83,7 @@ function extractExcessBits(buffer) {
       }
     }
   }
-}
+} */
 
 function isStartBit(buffer, i) {
   if (buffer[i-1] && buffer[i-1].toString(16) === '7e')
@@ -101,7 +102,8 @@ function findStopbit(buffer, i) {
   }
 }
 
-function appendData(buffer, startIndex, stopIndex, excess) {
+
+function appendData(buffer, startIndex, stopIndex) {
   var str = '';
   var temp = '';
   for (let k = stopIndex-1; k >= startIndex; k--) {
@@ -111,21 +113,18 @@ function appendData(buffer, startIndex, stopIndex, excess) {
 		str += buffer[k].toString(16);
   }
   temp = str;
-  
-  if (excess === 'append' && excessBits !== undefined) {
-    str = str + excessBits;
-    str = replaceWithOriginal(str);
-    data.push(parseInt(str, 16));
-    excessBits = '';
-    dataCount++;
+  data.push(parseInt(replaceWithOriginal(str), 16));
+  if(data[data.length - 1] - data[data.length - 2] !== 1){
+
   }
-  if (excess === 'add' && excessBits === '') {
-    excessBits = str;
-  } else if (excess === '') {
-    str = replaceWithOriginal(str);
-    data.push(parseInt(str, 16));
-    dataCount++;
-  }
+  dataCount++;
+}
+
+function appendDatatoExcessBits(buffer, startIndex, stopIndex) {
+  excessBits  = [];
+  for (let k = startIndex - 2; k < stopIndex; k++)
+    excessBits.push(buffer[k]);
+  console.log('excess bits', eb++);
 }
 
 function replaceWithOriginal(str) {
