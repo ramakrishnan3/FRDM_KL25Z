@@ -43,14 +43,15 @@ port.on('open', function() {
 
 // Read data that is available but keep the stream from entering "flowing mode"
 var data = [];
-var excessBits = 'ff';
+var excessBits = '';
 var dataCount = 0;
 var startTime = new Date();
 port.on('readable', function () {
   setTimeout(function() {
     var fs = require('fs');
-    var ar = [0, 255,126, 126, 0, 80, 221, 126,126, 0, 81, 221, 126,126, 0, 100, 216, 126, 126, 0, 93, 165, 126,126, 0, 92, 165, 126];
-    var buffer = Buffer.from(ar);
+    // var ar = [0, 255,126, 126, 0, 80, 221, 126,126, 0, 81, 221, 126,126, 0, 100, 216, 126, 126, 0, 93, 165, 126,126, 0, 92, 165, 126];
+    // var buffer = Buffer.from(ar);
+    var buffer = port.read();
     data = [];
     dataCount = 0;
     startTime = new Date();
@@ -70,7 +71,6 @@ port.on('readable', function () {
         }
       }
     }
-    console.log(data);
     fs.appendFileSync(filePath, data + ',');
   }, 1000);
 });
@@ -78,7 +78,7 @@ port.on('readable', function () {
 function extractExcessBits(buffer) {
   if (buffer[0].toString(16) !== '7e') {
     for (var start = 0; start < buffer.length; start++) {
-      if (buffer[start + 1].toString(16) === '7e') {
+      if (buffer[start+1] && buffer[start + 1].toString(16) === '7e') {
         appendData(buffer, 0, start+1, 'append');
         return start;
       }
@@ -124,11 +124,12 @@ function appendData(buffer, startIndex, stopIndex, excess) {
     str = str + excessBits;
     data.push(parseInt(str, 16));
     excessBits = '';
+    dataCount++;
   }
   if (excess === 'add' && excessBits === '') {
     excessBits = str;
   } else if (excess === '') {
     data.push(parseInt(str, 16));
+    dataCount++;
   }
-  dataCount++;
 }
