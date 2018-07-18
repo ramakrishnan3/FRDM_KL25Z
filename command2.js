@@ -1,6 +1,6 @@
 var SerialPort = require("serialport");
 var port = new SerialPort("COM6", {
-  baudRate: 115200,
+  baudRate: 230400,
   autoOpen: false
 });
 var fs = require('fs');
@@ -70,7 +70,7 @@ port.on('readable', function () {
         }
       }
     }
-    fs.appendFileSync(filePath, data + ',');
+    fs.appendFileSync(filePath, data + '\n');
   }, 1000);
 });
 
@@ -104,8 +104,7 @@ function findStopbit(buffer, i) {
 
 function appendData(buffer, startIndex, stopIndex, excess) {
   var str = '';
-  var temp = ''; ['df','dg','7e','00','xx','yy']
-  // memcpy(str,buffer,stop-star)
+  var temp = '';
   for (let k = stopIndex-1; k >= startIndex; k--) {
 	if(buffer[k] < 16)
 		str += '0' + buffer[k].toString(16);
@@ -116,7 +115,7 @@ function appendData(buffer, startIndex, stopIndex, excess) {
   
   if (excess === 'append' && excessBits !== undefined) {
     str = str + excessBits;
-    replaceWithOriginal(str);
+    str = replaceWithOriginal(str);
     data.push(parseInt(str, 16));
     excessBits = '';
     dataCount++;
@@ -124,7 +123,7 @@ function appendData(buffer, startIndex, stopIndex, excess) {
   if (excess === 'add' && excessBits === '') {
     excessBits = str;
   } else if (excess === '') {
-    replaceWithOriginal(str);
+    str = replaceWithOriginal(str);
     data.push(parseInt(str, 16));
     dataCount++;
   }
@@ -132,10 +131,10 @@ function appendData(buffer, startIndex, stopIndex, excess) {
 
 function replaceWithOriginal(str) {
   if (str.includes('5d7d')) {
-    str = str.replace('5d7d', '7d');
+    str = str.replace(/5d7d/g, '7d');
   }
   if (str.includes('5e7d')) {
-    str = str.replace('5e7d', '7e');
+    str = str.replace(/5e7d/g, '7e');
   }
   return str;
 }
