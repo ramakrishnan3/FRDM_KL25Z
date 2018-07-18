@@ -1,3 +1,5 @@
 result.txt
 .vscode/
 node_modules/
+result_parsed.csv
+~$DataSamplerate.xlsx
