@@ -1,0 +1,166 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Graph plot</title>
+    </head>
+    <script src="angular.js"></script>
+    <script src="d3.js"></script>
+    <script src="socketio.js"></script>
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0px;
+            padding: 0px;
+        }
+    </style>
+    <body class="body" ng-app="graph-app" ng-controller="graph-controller">
+        <svg class="svg"></svg>
+    </body>
+    <script>
+        var app = angular.module('graph-app', []);
+        var socketio = io('http://localhost:3000');
+
+        var negate = false, count = 20;
+
+        app.controller('graph-controller', function($window, $element, $scope, $interval) {
+            $scope.data = [];
+            $scope.chartData = [];
+
+            var scaleCount = 0, duration = 100;
+
+            var container = d3.select('body');
+            var svg = d3.select('svg');
+            
+            var margin = {left: 50, right: 20, top: 20, bottom: 30};
+            var svgGroup = svg.append('g');
+
+            var xScale = d3.scaleLinear().domain([0, 20000]);
+            var yScale = d3.scaleLinear().domain([65535, 0]);
+
+            var xAxis, yAxis;
+
+            var line;
+
+            var clipPath = svgGroup.append('defs')
+                .append('clipPath')
+                .attr('id', 'clip')
+                .append('rect');
+            var xAxisGroup = svgGroup.append('g');
+            var yAxisGroup = svgGroup.append('g');
+            var lineGroup = svgGroup.append('g')
+                .attr('clip-path', 'url(#clip)');
+            var lineChart = lineGroup
+                .append('path')
+                .attr('fill', 'none')
+                .attr('stroke', 'blue')
+                .attr('stroke-width', '1px');
+
+            function resize() {
+                var boundingRect = container.node().getBoundingClientRect();
+                var containerWidth = boundingRect.width;
+                var containerHeight = boundingRect.height > (boundingRect.width / 2) ? (boundingRect.width / 2) : boundingRect.height;
+
+                svg.attr('width', containerWidth);
+                svg.attr('height', containerHeight);
+
+                xScale.range([0, containerWidth - margin.left - margin.right]);
+                yScale.range([0, containerHeight - margin.top - margin.bottom]);
+
+                xAxis = d3.axisBottom(xScale);
+                yAxis = d3.axisLeft(yScale);
+
+                line = d3.line()
+                    .x(function(d, i) {
+                        return xScale(i);
+                    })
+                    .y(function(d) {
+                        return yScale(d);
+                    });
+
+                xAxisGroup.attr('transform', 'translate(' + margin.left + ', ' + (containerHeight - margin.bottom) + ')');
+                xAxisGroup.call(xAxis);
+                yAxisGroup.attr('transform', 'translate(' + margin.left + ', ' + margin.top + ')');
+                yAxisGroup.call(yAxis);
+                lineGroup.attr('transform', 'translate(' + margin.left + ', ' + margin.top + ')');
+                if($scope.chartData.length > 0) {
+                    lineChart.attr('d', line);
+                }
+                clipPath.attr('width', containerWidth - margin.left - margin.right + parseInt(lineChart.attr('stroke-width')))
+                    .attr('height', containerHeight - margin.top - margin.bottom);
+            }
+
+            function draw() {
+                var xDomain, length = $scope.data.length;
+                // console.log('Out', $scope.data.length, $scope.chartData.length);
+                if($scope.data.length > 1000) {
+                    $scope.chartData.push.apply($scope.chartData, $scope.data.splice(0, $scope.data.length - 1000));
+                    // console.log('In', $scope.data.length, $scope.chartData.length);
+                    if($scope.chartData.length > 20001) {
+                        xDomain = xScale.domain();
+                        xScale.domain([xDomain[0] + ($scope.chartData.length - 20001), xDomain[1] + ($scope.chartData.length - 20001)]);
+                        scaleCount += ($scope.chartData.length - 20001);
+                        xAxis = d3.axisBottom(xScale);
+                        line = d3.line()
+                            .x(function(d, i) {
+                                return xScale(i + scaleCount);
+                            })
+                            .y(function(d) {
+                                return yScale(d);
+                            });
+                        xAxisGroup
+                            // .transition()
+                            // .duration(duration)
+                            // .ease(d3.easeLinear)
+                            .call(xAxis);
+                        lineChart.datum($scope.chartData).attr('d', line).attr('transform', null);
+                        xDomain = xScale.domain();
+                        lineChart
+                            // .style('stroke-dasharray', function() {
+                            //     return this.getTotalLength();
+                            // })
+                            // .style('stroke-dashoffset', function() {
+                            //     return (xScale($scope.chartData.length) - xScale($scope.chartData.length - 1));
+                            // })
+                            // .transition()
+                            // .duration(duration)
+                            // .ease(d3.easeLinear)
+                            .attr('transform', 'translate(' + (-1 * xScale(xDomain[0] + ($scope.chartData.length - 20001))) + ')')
+                            // .style('stroke-dashoffset', function() {
+                            //     return '0';
+                            // });
+                        $scope.chartData.splice(0, $scope.chartData.length - 20001);
+                    } else {
+                        lineChart.datum($scope.chartData).attr('d', line);
+                        lineChart
+                            // .style('stroke-dasharray', function() {
+                            //     return this.getTotalLength();
+                            // })
+                            // .style('stroke-dashoffset', function() {
+                            //     return (xScale($scope.chartData.length) - xScale($scope.chartData.length - 1));
+                            // })
+                            // .transition()
+                            // .duration(duration)
+                            // .ease(d3.easeLinear)
+                            // .style('stroke-dashoffset', function() {
+                            //     return '0';
+                            // });
+                    }
+                }
+            }
+
+            resize();
+            draw();
+
+            d3.select(window).on('resize', resize);
+            socketio.on('data', function(d){
+                var a = [];
+                for(var i=0; i < d.length; i+=10) {
+                    a[a.length] = d[i];
+                }
+                $scope.data.push.apply($scope.data, a);
+                draw();
+            });
+        });
+    </script>
+</html>

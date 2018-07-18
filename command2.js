@@ -1,8 +1,11 @@
 var SerialPort = require("serialport");
+var server = require('http').createServer();
+var io = require("socket.io")(server);
 var port = new SerialPort("COM6", {
   baudRate: 576000,
   autoOpen: false
 });
+server.listen(3000);
 var fs = require('fs');
 var filePath = 'result.txt';
 var readCmd = [126,36,1,0,3,224,13,1,126];
@@ -63,6 +66,7 @@ port.on('readable', function () {
               appendDatatoExcessBits(buffer, startbit, buffer.length);
       }
     }
+    io.emit('data', data);
     fs.appendFileSync(filePath, data + ',');
   }, 50);
 });
