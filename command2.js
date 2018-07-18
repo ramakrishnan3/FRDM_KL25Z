@@ -43,32 +43,48 @@ port.on('open', function() {
 
 // Read data that is available but keep the stream from entering "flowing mode"
 var data = [];
+var excessBits = 'ff';
 var dataCount = 0;
 var startTime = new Date();
 port.on('readable', function () {
   setTimeout(function() {
-    var buffer = port.read();
+    var fs = require('fs');
+    var ar = [0, 255,126, 126, 0, 80, 221, 126,126, 0, 81, 221, 126,126, 0, 100, 216, 126, 126, 0, 93, 165, 126,126, 0, 92, 165, 126];
+    var buffer = Buffer.from(ar);
     data = [];
     dataCount = 0;
     startTime = new Date();
-    for (var i=0; i < buffer.length; i++) {
+    var start = extractExcessBits(buffer);
+    for (var i=start + 2; i < buffer.length; i++) {
       if (buffer[i].toString(16) === '7e') {
         if (isStartBit(buffer, i)) {
             // If it is a start bit
             var startbit = i+2;
             var stopbit = findStopbit(buffer, i+1);
             if (startbit && stopbit) {
-              appendData(buffer, startbit, stopbit);
+              appendData(buffer, startbit, stopbit, '');
               i = stopbit;
             }
             else if (startbit && stopbit === undefined)
-              appendData(buffer, startbit, buffer.length);
+              appendData(buffer, startbit, buffer.length, 'add');
         }
       }
     }
+    console.log(data);
     fs.appendFileSync(filePath, data + ',');
   }, 1000);
 });
+
+function extractExcessBits(buffer) {
+  if (buffer[0].toString(16) !== '7e') {
+    for (var start = 0; start < buffer.length; start++) {
+      if (buffer[start + 1].toString(16) === '7e') {
+        appendData(buffer, 0, start+1, 'append');
+        return start;
+      }
+    }
+  }
+}
 
 function isStartBit(buffer, i) {
   if (buffer[i-1] && buffer[i-1].toString(16) === '7e')
@@ -87,10 +103,10 @@ function findStopbit(buffer, i) {
   }
 }
 
-function appendData(buffer, startIndex, stopIndex) {
+function appendData(buffer, startIndex, stopIndex, excess) {
   var str = '';
   var temp = ''; ['df','dg','7e','00','xx','yy']
-  memcpy(str,buffer,stop-star)
+  // memcpy(str,buffer,stop-star)
   for (let k = stopIndex-1; k >= startIndex; k--) {
 	if(buffer[k] < 16)
 		str += '0' + buffer[k].toString(16);
@@ -103,7 +119,16 @@ function appendData(buffer, startIndex, stopIndex) {
   }
   if (str.includes('5e7d')) {
     str = str.replace('5e7d', '7e');
-  }  
-  data.push( temp + ':' + parseInt(str, 16));
+  }
+  if (excess === 'append' && excessBits !== undefined) {
+    str = str + excessBits;
+    data.push(parseInt(str, 16));
+    excessBits = '';
+  }
+  if (excess === 'add' && excessBits === '') {
+    excessBits = str;
+  } else if (excess === '') {
+    data.push(parseInt(str, 16));
+  }
   dataCount++;
 }
