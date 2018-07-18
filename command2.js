@@ -46,8 +46,7 @@ var excessBits = '';
 var dataCount = 0;
 var startTime = new Date();
 port.on('readable', function () {
-  setTimeout(function() {
-    var fs = require('fs');
+  setTimeout(function() {    
     // var ar = [0, 255,126, 126, 0, 80, 221, 126,126, 0, 81, 221, 126,126, 0, 100, 216, 126, 126, 0, 93, 165, 126,126, 0, 92, 165, 126];
     // var buffer = Buffer.from(ar);
     var buffer = port.read();
@@ -55,7 +54,7 @@ port.on('readable', function () {
     dataCount = 0;
     startTime = new Date();
     var start = extractExcessBits(buffer);
-    for (var i=start + 2; i < buffer.length; i++) {
+    for (var i=0; i < buffer.length; i++) {
       if (buffer[i].toString(16) === '7e') {
         if (isStartBit(buffer, i)) {
             // If it is a start bit
@@ -70,16 +69,16 @@ port.on('readable', function () {
         }
       }
     }
-    fs.appendFileSync(filePath, data + '\n');
-  }, 1000);
+    fs.appendFileSync(filePath, data + ',');
+  }, 50);
 });
 
 function extractExcessBits(buffer) {
-  if (buffer[0].toString(16) !== '7e') {
+  if (buffer[0].toString(16) !== '7e' || !isStartBit(buffer, 0)) {
     for (var start = 0; start < buffer.length; start++) {
       if (buffer[start+1] && buffer[start + 1].toString(16) === '7e') {
         appendData(buffer, 0, start+1, 'append');
-        return start;
+        break;
       }
     }
   }
@@ -88,7 +87,7 @@ function extractExcessBits(buffer) {
 function isStartBit(buffer, i) {
   if (buffer[i-1] && buffer[i-1].toString(16) === '7e')
     return true;
-  else if (!buffer[i-1] && i === 0) {
+  else if (!buffer[i-1] && i === 0 && buffer[i].toString(16) === '7e' && buffer[i+1].toString(16) !== '7e') {
     return true;
   }
   return false;
