@@ -1,5 +1,5 @@
 var SerialPort = require("serialport");
-var port = new SerialPort("COM6", {
+var port = new SerialPort("COM13", {
   baudRate: 576000,
   autoOpen: false
 });
@@ -73,7 +73,7 @@ port.on('readable', function () {
     fs.appendFileSync(filePath, data + ',');
     timeTakenToWrite = new Date() - timeTakenToWrite;
     console.log('timeTakenToRead : ',timeTakenToRead, ' timeTakenToProcess : ', timeTakenToProcess, ' timeTakenToWrite : ',  timeTakenToWrite, ' Starting Time : ',  totalTimeTaken.getHours() + ' : '+totalTimeTaken.getMinutes() + ' : ' + totalTimeTaken.getSeconds() + ' : ' + totalTimeTaken.getMilliseconds() , ' totalTimeTaken : ' , new Date() - totalTimeTaken, ' timeTakenforOneIteration : ', timeTakenforOneIteration);
-  }, 50  );
+  }, 50 - (new Date() - totalTimeTaken));
 });
 
 function findStopbit(buffer, i) {
