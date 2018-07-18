@@ -33,7 +33,6 @@ port.open(function (err){
   if(err) {
     return console.log('Error message port: ',err.message);
   }
-  
   port.write(pack(writeCmd));
 });
 
@@ -114,14 +113,10 @@ function appendData(buffer, startIndex, stopIndex, excess) {
 		str += buffer[k].toString(16);
   }
   temp = str;
-  if (str.includes('5d7d')) {
-    str = str.replace('5d7d', '7d');
-  }
-  if (str.includes('5e7d')) {
-    str = str.replace('5e7d', '7e');
-  }
+  
   if (excess === 'append' && excessBits !== undefined) {
     str = str + excessBits;
+    replaceWithOriginal(str);
     data.push(parseInt(str, 16));
     excessBits = '';
     dataCount++;
@@ -129,7 +124,18 @@ function appendData(buffer, startIndex, stopIndex, excess) {
   if (excess === 'add' && excessBits === '') {
     excessBits = str;
   } else if (excess === '') {
+    replaceWithOriginal(str);
     data.push(parseInt(str, 16));
     dataCount++;
   }
+}
+
+function replaceWithOriginal(str) {
+  if (str.includes('5d7d')) {
+    str = str.replace('5d7d', '7d');
+  }
+  if (str.includes('5e7d')) {
+    str = str.replace('5e7d', '7e');
+  }
+  return str;
 }
