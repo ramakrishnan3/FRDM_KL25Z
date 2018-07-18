@@ -1,5 +1,5 @@
 var SerialPort = require("serialport");
-var port = new SerialPort("COM13", {
+var port = new SerialPort("COM6", {
   baudRate: 576000,
   autoOpen: false
 });
@@ -43,9 +43,10 @@ port.on('open', function() {
 // Read data that is available but keep the stream from entering "flowing mode"
 var data = [];
 var excessBits = [];
-var timeTakenToRead, timeTakenToProcess, timeTakenToWrite, totalTimeTaken;
+var timeTakenToRead, timeTakenToProcess, timeTakenToWrite, totalTimeTaken, timeTakenforOneIteration;
 port.on('readable', function () {
   setTimeout(function() {    
+    timeTakenforOneIteration = new Date() - totalTimeTaken;
     totalTimeTaken = new Date();
     // var ar = [0, 255,126, 126, 0, 80, 221, 126,126, 0, 81, 221, 126,126, 0, 100, 216, 126, 126, 0, 93, 165, 126,126, 0, 92, 165, 126];
     // var buffer = Buffer.from(ar);
@@ -71,8 +72,8 @@ port.on('readable', function () {
     timeTakenToWrite = new Date();
     fs.appendFileSync(filePath, data + ',');
     timeTakenToWrite = new Date() - timeTakenToWrite;
-    console.log('timeTakenToRead : ',timeTakenToRead, ' timeTakenToProcess : ', timeTakenToProcess, ' timeTakenToWrite : ',  timeTakenToWrite, ' Starting Time : ',  totalTimeTaken.getHours() + ' : '+totalTimeTaken.getMinutes() + ' : ' + totalTimeTaken.getSeconds() + ' : ' + totalTimeTaken.getMilliseconds() , ' totalTimeTaken : ' , new Date() - totalTimeTaken);
-  }, 50);
+    console.log('timeTakenToRead : ',timeTakenToRead, ' timeTakenToProcess : ', timeTakenToProcess, ' timeTakenToWrite : ',  timeTakenToWrite, ' Starting Time : ',  totalTimeTaken.getHours() + ' : '+totalTimeTaken.getMinutes() + ' : ' + totalTimeTaken.getSeconds() + ' : ' + totalTimeTaken.getMilliseconds() , ' totalTimeTaken : ' , new Date() - totalTimeTaken, ' timeTakenforOneIteration : ', timeTakenforOneIteration);
+  }, 50  );
 });
 
 function findStopbit(buffer, i) {
