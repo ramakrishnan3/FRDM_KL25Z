@@ -35,7 +35,7 @@
             var margin = {left: 50, right: 20, top: 20, bottom: 30};
             var svgGroup = svg.append('g');
 
-            var xScale = d3.scaleLinear().domain([0, 20000]);
+            var xScale = d3.scaleLinear().domain([0, 60000]);
             var yScale = d3.scaleLinear().domain([65535, 0]);
 
             var xAxis, yAxis;
@@ -93,13 +93,13 @@
             function draw() {
                 var xDomain, length = $scope.data.length;
                 // console.log('Out', $scope.data.length, $scope.chartData.length);
-                if($scope.data.length > 1000) {
-                    $scope.chartData.push.apply($scope.chartData, $scope.data.splice(0, $scope.data.length - 1000));
+                // if($scope.data.length > 1000) {
+                    $scope.chartData.push.apply($scope.chartData, $scope.data.splice(0, $scope.data.length));
                     // console.log('In', $scope.data.length, $scope.chartData.length);
-                    if($scope.chartData.length > 20001) {
+                    if($scope.chartData.length > 60001) {
                         xDomain = xScale.domain();
-                        xScale.domain([xDomain[0] + ($scope.chartData.length - 20001), xDomain[1] + ($scope.chartData.length - 20001)]);
-                        scaleCount += ($scope.chartData.length - 20001);
+                        xScale.domain([xDomain[0] + ($scope.chartData.length - 60001), xDomain[1] + ($scope.chartData.length - 60001)]);
+                        scaleCount += ($scope.chartData.length - 60001);
                         xAxis = d3.axisBottom(xScale);
                         line = d3.line()
                             .x(function(d, i) {
@@ -125,11 +125,11 @@
                             // .transition()
                             // .duration(duration)
                             // .ease(d3.easeLinear)
-                            .attr('transform', 'translate(' + (-1 * xScale(xDomain[0] + ($scope.chartData.length - 20001))) + ')')
+                            .attr('transform', 'translate(' + (-1 * xScale(xDomain[0] + ($scope.chartData.length - 60001))) + ')')
                             // .style('stroke-dashoffset', function() {
                             //     return '0';
                             // });
-                        $scope.chartData.splice(0, $scope.chartData.length - 20001);
+                        $scope.chartData.splice(0, $scope.chartData.length - 60001);
                     } else {
                         lineChart.datum($scope.chartData).attr('d', line);
                         lineChart
@@ -146,7 +146,7 @@
                             //     return '0';
                             // });
                     }
-                }
+                // }
             }
 
             resize();
@@ -154,12 +154,15 @@
 
             d3.select(window).on('resize', resize);
             socketio.on('data', function(d){
-                var a = [];
+                console.log('timetakentoemit : ',new Date() - Date.parse(d.time));
+                /* var a = [];
                 for(var i=0; i < d.length; i+=10) {
                     a[a.length] = d[i];
-                }
-                $scope.data.push.apply($scope.data, a);
+                } */
+                $scope.data.push.apply($scope.data, d.d);
+                console.time('####');
                 draw();
+                console.timeEnd('####');
             });
         });
     </script>

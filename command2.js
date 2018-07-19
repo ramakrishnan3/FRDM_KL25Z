@@ -66,9 +66,9 @@ port.on('readable', function () {
               appendDatatoExcessBits(buffer, startbit, buffer.length);
       }
     }
-    io.emit('data', data);
+    io.emit('data', {d: data, time: new Date()});
     fs.appendFileSync(filePath, data + ',');
-  }, 50);
+  }, 100);
 });
 
 function findStopbit(buffer, i) {
@@ -78,7 +78,6 @@ function findStopbit(buffer, i) {
     }
   }
 }
-
 
 function appendData(buffer, startIndex, stopIndex) {
   var str = '';
